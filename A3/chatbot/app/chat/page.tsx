@@ -32,6 +32,8 @@ export default function ChatPage() {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [showModels, setShowModels] = useState(false);
   const [renderMarkdown, setRenderMarkdown] = useState(true);
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -122,6 +124,46 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Failed to delete session:', error);
+    }
+  };
+
+  const startRenaming = (sessionId: number, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(sessionId);
+    setEditingTitle(currentTitle);
+  };
+
+  const cancelRenaming = () => {
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
+  const renameSession = async (sessionId: number, e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token || !editingTitle.trim()) return;
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title: editingTitle.trim() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(sessions.map(s => 
+          s.id === sessionId ? { ...s, title: editingTitle.trim() } : s
+        ));
+        setEditingSessionId(null);
+        setEditingTitle('');
+      }
+    } catch (error) {
+      console.error('Failed to rename session:', error);
     }
   };
 
@@ -258,16 +300,42 @@ export default function ChatPage() {
                   : 'border-transparent hover:border-white/10 hover:bg-white/5'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-light text-white truncate flex-1 tracking-wide">
-                  {session.title}
-                </span>
-                <button
-                  onClick={(e) => deleteSession(session.id, e)}
-                  className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white transition-opacity ml-2 text-lg"
-                >
-                  ×
-                </button>
+              <div className="flex items-center justify-between gap-2">
+                {editingSessionId === session.id ? (
+                  <form onSubmit={(e) => renameSession(session.id, e)} className="flex-1 flex gap-1">
+                    <input
+                      type="text"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={() => renameSession(session.id)}
+                      autoFocus
+                      className="flex-1 px-2 py-1 bg-black border border-white/30 rounded text-xs font-light text-white outline-none focus:border-white"
+                    />
+                  </form>
+                ) : (
+                  <span className="text-xs font-light text-white truncate flex-1 tracking-wide">
+                    {session.title}
+                  </span>
+                )}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => startRenaming(session.id, session.title, e)}
+                    className="text-white/50 hover:text-white transition-colors p-1"
+                    title="Rename"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => deleteSession(session.id, e)}
+                    className="text-white/50 hover:text-white transition-colors text-lg"
+                    title="Delete"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
               <span className="text-[10px] text-white/30 font-light">
                 {new Date(session.updated_at).toLocaleDateString()}

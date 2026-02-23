@@ -20,9 +20,10 @@ export default function Home() {
             <h1 className="text-7xl md:text-8xl font-light tracking-tight mb-6">
               AI <span className="font-bold">ChatBot</span>
             </h1>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-              Experience the next generation of intelligent conversation
-            </p>
+            <h3>
+              Dummy Landing Page
+            </h3>
+            
           </div>
 
           {/* CTA Section */}
@@ -58,7 +59,6 @@ export default function Home() {
                   Neural Processing
                 </h3>
                 <p className="text-white/50 text-sm font-light leading-relaxed">
-                  Advanced AI responses powered by cutting-edge language models
                 </p>
               </div>
             </div>
@@ -75,7 +75,6 @@ export default function Home() {
                   Memory Core
                 </h3>
                 <p className="text-white/50 text-sm font-light leading-relaxed">
-                  Persistent conversation history across all your sessions
                 </p>
               </div>
             </div>
@@ -92,7 +91,6 @@ export default function Home() {
                   Security Protocol
                 </h3>
                 <p className="text-white/50 text-sm font-light leading-relaxed">
-                  Enterprise-grade encryption safeguarding your data
                 </p>
               </div>
             </div>

@@ -107,3 +107,65 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    // Await params for Next.js 15+ compatibility
+    const resolvedParams = await Promise.resolve(params);
+    const sessionId = resolvedParams.id;
+
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const user = await getUserFromToken(token);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const { title } = await request.json();
+
+    if (!title || title.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    // Update session title
+    const result = await pool.query(
+      'UPDATE chat_sessions SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
+      [title.trim(), sessionId, user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Session not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ 
+      message: 'Session renamed successfully',
+      session: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Rename session error:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to rename session' },
+      { status: 500 }
+    );
+  }
+}
