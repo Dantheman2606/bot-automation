@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { message, sessionId } = await request.json();
+    const { message, sessionId, model } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate and set model (default to gemini-2.5-flash)
+    const allowedModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'];
+    const selectedModel = model && allowedModels.includes(model) ? model : 'gemini-2.5-flash';
 
     let currentSessionId = sessionId;
 
@@ -65,10 +69,10 @@ export async function POST(request: NextRequest) {
       [currentSessionId, 'user', message]
     );
 
-    // Call Gemini API - using gemini-2.5-flash
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // Call Gemini API with selected model
+    const geminiModel = genAI.getGenerativeModel({ model: selectedModel });
     
-    const chat = model.startChat({
+    const chat = geminiModel.startChat({
       history: chatHistory,
       generationConfig: {
         temperature: 0.7,

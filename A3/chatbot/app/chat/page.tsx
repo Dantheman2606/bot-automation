@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: number;
@@ -26,11 +28,16 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [showModels, setShowModels] = useState(false);
+  const [renderMarkdown, setRenderMarkdown] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
+    const savedModel = localStorage.getItem('selectedModel');
 
     if (!token || !userData) {
       router.push('/login');
@@ -38,6 +45,9 @@ export default function ChatPage() {
     }
 
     setUser(JSON.parse(userData));
+    if (savedModel) {
+      setSelectedModel(savedModel);
+    }
     fetchSessions(token);
   }, [router]);
 
@@ -149,6 +159,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: userMessage,
           sessionId: currentSessionId,
+          model: selectedModel,
         }),
       });
 
@@ -178,6 +189,26 @@ export default function ChatPage() {
       alert('Failed to send message. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const listAvailableModels = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('/api/models', {
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.models) {
+        setAvailableModels(data.models);
+        setShowModels(true);
+        console.log('Available Models:', data.models);
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
     }
   };
 
@@ -250,6 +281,12 @@ export default function ChatPage() {
             {user?.name || user?.email}
           </div>
           <button
+            onClick={listAvailableModels}
+            className="w-full py-2 px-4 border border-white/20 hover:border-white/40 rounded-full text-white/70 hover:text-white transition-all duration-300 text-xs font-light tracking-wider uppercase hover:scale-105 hover:bg-white/5"
+          >
+            List Models
+          </button>
+          <button
             onClick={logout}
             className="w-full py-2 px-4 border border-white/20 hover:border-white/40 rounded-full text-white/70 hover:text-white transition-all duration-300 text-xs font-light tracking-wider uppercase hover:scale-105 hover:bg-white/5"
           >
@@ -271,7 +308,36 @@ export default function ChatPage() {
             </svg>
           </button>
           <h1 className="text-sm font-light tracking-widest uppercase">AI Nexus</h1>
-          <div className="w-9"></div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setRenderMarkdown(!renderMarkdown)}
+              className="px-3 py-1.5 border border-white/20 hover:border-white/40 rounded-full text-xs font-light text-white/80 hover:text-white transition-all duration-300"
+              title={renderMarkdown ? 'Show Raw Text' : 'Render Markdown'}
+            >
+              {renderMarkdown ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              )}
+            </button>
+            <select
+              value={selectedModel}
+              onChange={(e) => {
+                setSelectedModel(e.target.value);
+                localStorage.setItem('selectedModel', e.target.value);
+              }}
+              className="px-3 py-1.5 bg-black border border-white/20 rounded-full text-xs font-light text-white/80 hover:border-white/40 transition-all duration-300 outline-none focus:border-white cursor-pointer"
+            >
+              <option value="gemini-2.5-flash" className="bg-black">Gemini 2.5 Flash</option>
+              <option value="gemini-2.5-pro" className="bg-black">Gemini 2.5 Pro</option>
+              <option value="gemini-2.0-lite" className="bg-black">Gemini 2.0 Lite</option>
+            </select>
+          </div>
         </div>
 
         {/* Messages */}
@@ -305,7 +371,15 @@ export default function ChatPage() {
                       : 'bg-white/5 text-white border border-white/10 shadow-white/5'
                   }`}
                 >
-                  <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  {renderMarkdown && message.role === 'assistant' ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))
@@ -345,6 +419,31 @@ export default function ChatPage() {
           </form>
         </div>
       </div>
+
+      {/* Models Modal */}
+      {showModels && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowModels(false)}>
+          <div className="bg-black border border-white/20 rounded-3xl p-8 max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-light tracking-wide">Available <span className="font-bold">Models</span></h2>
+              <button onClick={() => setShowModels(false)} className="text-white/50 hover:text-white text-2xl">
+                ×
+              </button>
+            </div>
+            <div className="space-y-2">
+              {availableModels.length > 0 ? (
+                availableModels.map((model, index) => (
+                  <div key={index} className="p-3 border border-white/10 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300">
+                    <p className="text-sm font-light text-white/80">{model}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-white/50 text-sm">No models available</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
