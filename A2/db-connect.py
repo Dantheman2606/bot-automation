@@ -6,9 +6,7 @@ from psycopg2.extras import execute_values
 from datetime import datetime
 
 
-# ----------------------------------------
 # TYPE INFERENCE FUNCTION
-# ----------------------------------------
 
 def infer_postgres_type(series: pd.Series):
     dtype = series.dtype
@@ -44,9 +42,7 @@ def infer_postgres_type(series: pd.Series):
         return "TEXT"
 
 
-# ----------------------------------------
 # CREATE TABLE DYNAMICALLY
-# ----------------------------------------
 
 def create_table_from_df(cursor, table_name, df):
     columns = []
@@ -107,9 +103,7 @@ def insert_dataframe(cursor, table_name, df):
     execute_values(cursor, insert_query, records)
 
 
-# ----------------------------------------
 # MAIN FUNCTION
-# ----------------------------------------
 
 def get_existing_data(cursor, table_name, df):
     """Fetch existing data from table to compare with new data"""
@@ -180,9 +174,6 @@ def upload_dataframe_to_postgres(df, table_name, conn_params, incremental=True):
     print(f"Upload completed successfully for table '{table_name}'!")
 
 
-# ----------------------------------------
-# EXAMPLE USAGE
-# ----------------------------------------
 
 if __name__ == "__main__":
 
