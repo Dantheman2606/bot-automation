@@ -7,10 +7,12 @@ import jwt
 from functools import wraps
 from datetime import datetime, timedelta
 
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
+# JWT Configuration
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "secret-key")
 JWT_ALGORITHM = "HS256"
 
@@ -27,6 +29,7 @@ TABLE_NAME = "ifsc_codes"
 
 
 def get_db_connection():
+    """Create and return a database connection"""
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         return conn
@@ -36,7 +39,10 @@ def get_db_connection():
 
 
 def token_required(f):
-   
+    """
+    Decorator to protect routes with JWT authentication
+    Expects Authorization header with format: Bearer <token>
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
@@ -82,7 +88,7 @@ def token_required(f):
 @app.route('/api/login', methods=['POST'])
 def login():
     """
-   
+    Generate JWT token for authentication
     
     Request Body (JSON):
         {
@@ -90,7 +96,8 @@ def login():
             "password": "password"
         }
         
-    
+    Returns:
+        JSON object with JWT token
     """
     data = request.get_json()
     
@@ -102,7 +109,8 @@ def login():
     username = data.get('username')
     password = data.get('password')
     
-    # Basic auth credentials
+    # Simple authentication (replace with your actual authentication logic)
+    # For production, use proper password hashing and user database
     valid_username = os.getenv("API_USERNAME", "admin")
     valid_password = os.getenv("API_PASSWORD", "password")
     
@@ -132,7 +140,7 @@ def login():
 @token_required
 def get_bank_details():
     """
-    
+    Get bank details by Bank name and IFSC code (POST version)
     
     Request Body (JSON):
         {
@@ -220,5 +228,7 @@ if __name__ == '__main__':
     print("\nAvailable endpoints:")
     print("  POST /api/login            - Get JWT token (username/password)")
     print("  POST /api/bank-details     - Get bank details (requires JWT token)")
+    print("\nJWT Authentication enabled!")
+    print("Set JWT_SECRET_KEY, API_USERNAME, and API_PASSWORD in .env file")
     print("\nStarting server on http://localhost:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)
