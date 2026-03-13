@@ -19,6 +19,15 @@ interface Session {
   updated_at: string;
 }
 
+const SUPPORTED_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gemini-2.0-flash-lite',
+  'gpt-4o-mini',
+  'gpt-4o',
+  'gpt-4.1-mini',
+];
+
 export default function ChatPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,7 +56,7 @@ export default function ChatPage() {
     }
 
     setUser(JSON.parse(userData));
-    if (savedModel) {
+    if (savedModel && SUPPORTED_MODELS.includes(savedModel)) {
       setSelectedModel(savedModel);
     }
     fetchSessions(token);
@@ -375,7 +384,7 @@ export default function ChatPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-sm font-light tracking-widest uppercase">AI Nexus</h1>
+          <h1 className="text-sm font-light tracking-widest uppercase">AI Chatbot</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setRenderMarkdown(!renderMarkdown)}
@@ -403,7 +412,10 @@ export default function ChatPage() {
             >
               <option value="gemini-2.5-flash" className="bg-black">Gemini 2.5 Flash</option>
               <option value="gemini-2.5-pro" className="bg-black">Gemini 2.5 Pro</option>
-              <option value="gemini-2.0-lite" className="bg-black">Gemini 2.0 Lite</option>
+              <option value="gemini-2.0-flash-lite" className="bg-black">Gemini 2.0 Flash Lite</option>
+              <option value="gpt-4o-mini" className="bg-black">ChatGPT GPT-4o Mini</option>
+              <option value="gpt-4o" className="bg-black">ChatGPT GPT-4o</option>
+              <option value="gpt-4.1-mini" className="bg-black">ChatGPT GPT-4.1 Mini</option>
             </select>
           </div>
         </div>

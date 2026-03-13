@@ -4,7 +4,7 @@ A modern, full-stack chatbot application built with Next.js App Router, PostgreS
 
 ## Features
 
-- 🤖 **AI-Powered Conversations**: Integration with Google's Gemini API
+- 🤖 **AI-Powered Conversations**: Integration with Gemini and ChatGPT (OpenAI)
 - 🔐 **Authentication System**: Secure login and signup with JWT
 - 💾 **Chat History**: All conversations are saved in PostgreSQL
 - 🎨 **Modern UI**: Sleek design with Tailwind CSS and dark mode support
@@ -17,7 +17,7 @@ A modern, full-stack chatbot application built with Next.js App Router, PostgreS
 - **Styling**: Tailwind CSS 4
 - **Backend**: Next.js API Routes
 - **Database**: PostgreSQL
-- **AI**: Google Gemini API (gemini-1.5-flash model)
+- **AI**: Google Gemini API and OpenAI Chat Completions API
 - **Authentication**: JWT with bcryptjs
 
 ## Getting Started
@@ -40,8 +40,20 @@ A modern, full-stack chatbot application built with Next.js App Router, PostgreS
      ```
      DATABASE_URL=postgresql://username:password@localhost:5432/chatbot_db
      GEMINI_API_KEY=your-actual-gemini-api-key
+   OPENAI_API_KEY=your-actual-openai-api-key
      JWT_SECRET=your-secure-random-jwt-secret
      ```
+
+## Model Switching
+
+- Use the model selector in the chat header to switch between Gemini and ChatGPT models.
+- Supported Gemini models: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash-lite`
+- Supported ChatGPT models: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1-mini`
+
+## Development Request Logging
+
+- In development mode (`NODE_ENV=development`), every outbound model request is appended to `logs/api-requests.log`.
+- Each log entry includes timestamp, provider, model, session id, and the exact payload sent to the model API (chat history + current user message).
 
 3. **Set up the database**:
    - Create a PostgreSQL database named `chatbot_db`
